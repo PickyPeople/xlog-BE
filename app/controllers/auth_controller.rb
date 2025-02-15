@@ -2,7 +2,7 @@ class AuthController < ApplicationController
   
   # 상수는 메소드 밖에서 정의
   VALID_EMAIL = "test@test.com"
-  VALID_PASSWORD = "password123"
+  VALID_PASSWORD = "jjy991019"
 
   def login
     if params[:email] == VALID_EMAIL && params[:password] == VALID_PASSWORD
