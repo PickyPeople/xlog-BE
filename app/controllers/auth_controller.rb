@@ -12,4 +12,9 @@ class AuthController < ApplicationController
              status: :unauthorized
     end
   end
+
+  def logout
+    render json: { status: 'success', message: '로그아웃 성공' }
+  end
+  
 end
