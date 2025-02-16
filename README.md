@@ -51,6 +51,7 @@ end
 <ul>
  <li>presenceで必ず入力するようにし、uniquenessで重複ができないようにします。</li>
 </ul>
+
 ### データベース マイグレーション実行
 ```bash
 rails db:migrate
@@ -58,6 +59,7 @@ rails db:migrate
 <ul>
  <li>rails db:migrateでテーブルを作ります。</li>
 </ul>
+
 ### Auth controllers 生成
 ```ruby
 module Api
