@@ -1,24 +1,32 @@
-# README
+# 課題
+Ruby on RailsとVue.jsを用いたブログプラットフォームを構築していただきます。
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+# **課題の説明**
+1. ブログ記事の管理
+<ul>
+ <li>記事の投稿、編集、削除機能をRailsで実装。</li>
+ <li>記事にカテゴリやタグを関連付けるリレーションを構築。</li>
+</ul>
 
-Things you may want to cover:
+2.検索・フィルタリング機能
+<ul>
+ <li>Vue.jsを用いて、記事をカテゴリごとにフィルタリングし、検索できる機能を実装。</li>
+</ul>
 
-* Ruby version
+3.ユーザー認証機能
+<ul>
+ <li>Railsで簡易的なログイン/ログアウト機能を追加。</li>
+</ul>
 
-* System dependencies
+4.レスポンシブデザイン
+<ul>
+ <li>フロントエンドでモバイル対応のデザインを適用。</li>
+</ul>
 
-* Configuration
+5.任意項目（追加要素）
+<ul>
+ <li>単体テストまたはE2Eテストを導入。</li>
+ <li>デプロイ手順のドキュメント化。</li>
+</ul>
 
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+# **フォルダーの仕組み**
