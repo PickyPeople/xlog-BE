@@ -30,3 +30,60 @@ Ruby on RailsとVue.jsを用いたブログプラットフォームを構築し�
 </ul>
 
 # **フォルダーの仕組み**
+# **ログインとログアウト通信**
+### Userモデル生成
+```bash
+ # User モデル生成コマンド
+rails generate model User email:string password_digest:string
+```
+<ul>
+ <li>app/models/user.rb: Userモデルファイル生成</li>
+ <li>db/migrate/YYYYMMDDHHMMSS_create_users.rb: データベース マイグレーションファイル生成</li>
+</ul>
+
+### Userモデル設定(app/models/user.rb)
+```ruby
+class User < ApplicationRecord
+  has_secure_password
+  validates :email, presence: true, uniqueness: true
+end
+```
+### データベース マイグレーション実行
+```bash
+rails db:migrate
+```
+### Auth controllers 生成
+```ruby
+module Api
+  class AuthController < ApplicationController
+    def login
+      user = User.find_by(email: params[:email])
+      
+      if user&.authenticate(params[:password])
+        render json: { status: 'success' }
+      else
+        render json: { status: 'error', message: '로그인 실패' }, status: :unauthorized
+      end
+    end
+
+    def logout
+      render json: { status: 'success' }
+    end
+  end
+end
+```
+### ラウト設定(config/routes.rb)
+```ruby
+Rails.application.routes.draw do
+  namespace :api do
+    post '/login', to: 'auth#login'
+    post '/logout', to: 'auth#logout'
+  end
+end
+```
+### テスト使用者生成
+```bash
+rails console
+
+User.create(email: "jjyjjh33@gmail.com", password: "jjy991019")
+```
