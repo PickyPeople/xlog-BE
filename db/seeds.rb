@@ -7,3 +7,13 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
+User.destroy_all
+
+User.create!(
+  email: "test@test.com",
+  password: "test1234"
+)
+
+puts "기본 사용자가 생성되었습니다!"
+puts "Email: test@test.com"
+puts "Password: test1234"
