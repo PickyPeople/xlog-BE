@@ -8,6 +8,16 @@ module Api
       @posts = Post.all.order(created_at: :desc)
       render json: @posts
     end
+
+    def search
+      keyword = params[:keyword]
+    
+      @posts = Post.joins(:tags)
+                   .where("posts.title LIKE ? OR tags.name LIKE ?", "%#{keyword}%", "%#{keyword}%")
+                   .distinct
+    
+      render json: @posts
+    end
  
     def create
       @post = Post.new(post_params.except(:tags))
@@ -36,19 +46,22 @@ module Api
  
     def update
       if params[:post][:tags].present?
-        @post.tags.clear  # 기존 태그 삭제
-        params[:post][:tags].each do |tag_name|
-          tag = Tag.find_or_create_by(name: tag_name)
-          @post.tags << tag
+        @post.tags.clear
+        
+        new_tags = params[:post][:tags].map do |tag_name|
+          Tag.find_or_create_by(name: tag_name)
         end
+        
+        @post.tags = new_tags
       end
- 
-      if @post.update(post_params)
+    
+      if @post.update(post_params.except(:tags))
         render json: @post
       else
         render json: { error: @post.errors.full_messages }, status: :unprocessable_entity
       end
     end
+    
  
     def destroy
       @post.destroy
