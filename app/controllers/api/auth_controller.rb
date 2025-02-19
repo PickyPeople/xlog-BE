@@ -30,7 +30,7 @@ module Api
       if @current_user
         render json: {
           status: 'success',
-          user: { email: @current_user.email }
+          user: { email: @current_user.email, username: @current_user.username }
         }
       end
     end
