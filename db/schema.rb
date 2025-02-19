@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_02_19_053437) do
+ActiveRecord::Schema[8.0].define(version: 2025_02_19_075016) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -48,7 +48,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_19_053437) do
     t.string "img"
     t.date "date"
     t.bigint "user_id", null: false
-    t.integer "likeNum"
+    t.integer "likeNum", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "content"
