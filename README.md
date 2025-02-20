@@ -29,38 +29,57 @@ Ruby on RailsとVue.jsを用いたブログプラットフォームを構築し�
  <li>デプロイ手順のドキュメント化。</li>
 </ul>
 
-# **フォルダーの仕組み**
-# **ログインとログアウト通信**
-### Userモデル生成
-```bash
- # User モデル生成コマンド
-rails generate model User email:string password_digest:string
-```
-<ul>
- <li>app/models/user.rb: Userモデルファイル生成</li>
- <li>db/migrate/YYYYMMDDHHMMSS_create_users.rb: データベース マイグレーションファイル生成</li>
-</ul>
+# Xlog - ブログプラットフォーム
 
-### Userモデル設定(app/models/user.rb)
-```ruby
-class User < ApplicationRecord
-  has_secure_password
-  validates :email, presence: true, uniqueness: true
-end
-```
-<ul>
- <li>presenceで必ず入力するようにし、uniquenessで重複ができないようにします。</li>
-</ul>
+Vue.jsとRuby on Railsを使用したブログプラットフォームプロジェクトです。
 
-### データベース マイグレーション実行
-```bash
-rails db:migrate
-```
-<ul>
- <li>rails db:migrateでテーブルを作ります。</li>
-</ul>
+## 目次
+1. [技術スタック](#技術スタック)
+2. [主要機能](#主要機能)
+3. [プロジェクト構造](#プロジェクト構造)
+4. [機能別コード実装](#機能別コード実装)
+5. [インストールと実行方法](#インストールと実行方法)
+6. [API仕様書](#api仕様書)
 
-### auth_controllers 生成(app/controllers/api)
+## 技術スタック
+
+### フロントエンド
+- Vue.js 3 (Composition API)
+- Vue Router
+- JWT認証
+- FormDataの処理
+
+### バックエンド
+- Ruby on Rails (APIモード)
+- Active Storage (画像処理)
+- JWT認証
+- PostgreSQL
+
+## 主要機能
+
+### 1. ユーザー管理
+- JWT基盤の認証
+- ログイン/ログアウト
+- ユーザー権限管理
+- セキュリティ処理
+
+### 2. 投稿管理
+- CRUD (作成、読み取り、更新、削除)
+- 画像アップロード
+- タグシステム
+- 権限基盤の投稿管理
+
+### 3. 検索システム
+- 統合検索（タイトル、タグ）
+- リアルタイム検索UI
+- 検索結果ページ
+- タグベースのフィルタリング
+
+## 機能別コード実装
+
+### 1. ユーザー認証システム
+
+#### バックエンド (AuthController)
 ```ruby
 module Api
   class AuthController < ApplicationController
@@ -68,42 +87,220 @@ module Api
       user = User.find_by(email: params[:email])
       
       if user&.authenticate(params[:password])
-        render json: { status: 'success' }
+        token = JWT.encode(
+          { user_id: user.id, exp: 24.hours.from_now.to_i },
+          Rails.application.credentials.secret_key_base
+        )
+        render json: { 
+          status: 'success',
+          token: token,
+          user: { email: user.email }
+        }
       else
-        render json: { status: 'error', message: '로그인 실패' }, status: :unauthorized
+        render json: { 
+          status: 'error', 
+          message: 'ログインに失敗しました' 
+        }, status: :unauthorized
       end
     end
+  end
+end
+```
 
-    def logout
-      render json: { status: 'success' }
+#### フロントエンド (LoginModal)
+```javascript
+export default {
+  setup(props, { emit }) {
+    const email = ref('');
+    const password = ref('');
+
+    const handleLogin = async() => {
+      try {
+        const res = await authApi.login(email.value, password.value);
+        if(res.data.status === 'success') {
+          localStorage.setItem('token', res.data.token);
+          emit('login-success');
+          emit('close-login');
+        }
+      } catch(err) {
+        console.error("エラー:", err);
+        error.value = 'ログインに失敗しました'
+      }
+    };
+  }
+}
+```
+
+### 2. 投稿CRUD
+
+#### バックエンド (PostsController)
+```ruby
+module Api
+  class PostsController < ApplicationController
+    before_action :authenticate_user, only: [:create, :update, :destroy]
+    before_action :set_post, only: [:show, :update, :destroy]
+    before_action :check_post_owner, only: [:update, :destroy]
+ 
+    def create
+      @post = Post.new(post_params.except(:tags))
+      @post.user = current_user
+      @post.date = Date.today
+      
+      if @post.save
+        if params[:post][:tags].present?
+          params[:post][:tags].each do |tag_name|
+            tag = Tag.find_or_create_by(name: tag_name)
+            @post.tags << tag
+          end
+        end
+        render json: @post, status: :created
+      else
+        render json: { error: @post.errors.full_messages }, 
+               status: :unprocessable_entity
+      end
     end
   end
 end
 ```
-### user.rb(app/model/user.rb)
-```ruby
-class User < ApplicationRecord
-  has_secure_password #비밀번호를 암호화 하기 위한 메서드 ex)test1234 => 324kjdkjdas이렇게 암호화가 된다.
-  validates :email, presence: true, uniqueness: true #이메일 유효성 검사 presence는 required, uniqueness는 중복이 될 수 없다는 뜻
-end
-```
-1. フロントから貰った要請を送ります。
-2. AuthController Classが要請が要請をもらいます。
-3. Userモデルで使用者を探します。
-4. Userモデルでhas_secure_passwordを通じてパスワードを確認します。
-5. 確認結果をAuthControllerがもらい、JSONの形でvueに伝えます。
-### ラウト設定(config/routes.rb)
-```ruby
-Rails.application.routes.draw do
-  namespace :api do
-    post '/login', to: 'auth#login'
-    post '/logout', to: 'auth#logout'
-  end
-end
-```
-### テスト使用者生成
-```bash
-rails console
 
-User.create(email: "jjyjjh33@gmail.com", password: "jjy991019")
+#### フロントエンド (WriteView)
+```javascript
+export default {
+  name: 'WriteContent',
+  setup() {
+    const title = ref('');
+    const content = ref('');
+    const tags = ref([]);
+    const image = ref(null);
+
+    const publish = async () => {
+      try {
+        const formData = new FormData();
+        formData.append('post[title]', title.value);
+        formData.append('post[content]', content.value);
+        
+        const sub = content.value.length > 100 
+          ? content.value.substring(0, 100) + "..."
+          : content.value;
+        
+        formData.append('post[sub]', sub);
+        
+        if (image.value) {
+          formData.append('post[image]', image.value);
+        }
+
+        tags.value.forEach(tag => {
+          formData.append('post[tags][]', tag);
+        });
+    
+        await postsApi.createPost(formData);
+        router.push('/');
+      } catch (error) {
+        console.error('投稿の作成に失敗しました:', error);
+      }
+    };
+  }
+}
 ```
+
+### 3. 検索システム
+
+#### バックエンド (検索ロジック)
+```ruby
+def search
+  keyword = params[:keyword]
+  @posts = Post.joins(:tags)
+               .where("posts.title LIKE ? OR tags.name LIKE ?", 
+                     "%#{keyword}%", "%#{keyword}%")
+               .distinct
+  render json: @posts
+end
+```
+
+#### フロントエンド (検索実装)
+```javascript
+export default {
+  setup(props, { emit }) {
+    const searchKeyword = ref('');
+    const isSearchExpanded = ref(false);
+
+    const searchPosts = () => {
+      if (searchKeyword.value.trim() !== '') {
+        router.push(`/search?keyword=${encodeURIComponent(searchKeyword.value)}`);
+        searchKeyword.value = '';
+        isSearchExpanded.value = false;
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isSearchExpanded.value) {
+        isSearchExpanded.value = false;
+        searchKeyword.value = '';
+      }
+    };
+  }
+}
+```
+
+## データベース構造
+
+```mermaid
+erDiagram
+    User ||--o{ Post : "has many"
+    Post ||--o{ PostTag : "has many"
+    Tag ||--o{ PostTag : "has many"
+    Post ||--o| Image : "has one"
+
+    User {
+        string username
+        string email
+        string password_digest
+    }
+
+    Post {
+        string title
+        string content
+        string sub
+        datetime created_at
+        datetime updated_at
+        bigint user_id
+    }
+
+    Tag {
+        string name
+        datetime created_at
+        datetime updated_at
+    }
+
+    PostTag {
+        bigint post_id
+        bigint tag_id
+    }
+```
+
+## コードレビューポイント
+
+### 1. セキュリティ
+- [x] ユーザー認証の実装
+- [x] 権限チェックの実装
+- [x] JWTトークン管理
+
+### 2. パフォーマンス
+- [x] 画像処理の最適化
+- [x] 検索クエリの最適化
+- [ ] N+1クエリ問題の解決が必要
+
+### 3. ユーザー体験
+- [x] 検索UI/UX
+- [x] レスポンシブデザイン
+- [x] エラー処理とフィードバック
+
+## 今後の改善点
+1. 検索パフォーマンスの最適化
+   - 全文検索エンジンの導入検討
+   - キャッシュの適用
+2. テストコードの作成
+3. CI/CDパイプラインの構築
+
+
+
