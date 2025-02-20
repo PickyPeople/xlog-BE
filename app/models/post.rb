@@ -9,10 +9,9 @@ class Post < ApplicationRecord
     json.merge!({
       image_url: image.attached? ? Rails.application.routes.url_helpers.url_for(image) : nil,
       username: user&.username || '',
-      tags: []  # 기본값으로 빈 배열 설정
+      tags: []
     })
 
-    # tags 관계가 존재하는 경우에만 pluck 실행
     begin
       json[:tags] = tags.pluck(:name) if self.respond_to?(:tags)
     rescue => e
