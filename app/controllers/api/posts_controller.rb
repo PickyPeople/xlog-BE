@@ -25,7 +25,6 @@ module Api
       @post.date = Date.today
       
       if @post.save
-        # post가 저장된 후에 태그 처리
         if params[:post][:tags].present?
           params[:post][:tags].each do |tag_name|
             tag = Tag.find_or_create_by(name: tag_name)
